@@ -1,0 +1,16 @@
+{application, nook,
+ [{description, "Nooks to store stuff in."},
+  {vsn, "0.1.0"},
+  {registered, [nook_sup, nook_app]},
+  {mod, {nook_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    erldyn
+   ]},
+  {env, []},
+  {modules, [nook, nook_app, nook_store, nook_sup]},
+  {maintainers, ["Jim Rosenblum"]},
+  {licenses, []},
+  {links, []}
+ ]}.

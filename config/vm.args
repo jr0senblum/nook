@@ -1,0 +1,3 @@
+## Name of the node
+-name nook@127.0.0.1
+-setcookie somecookie
