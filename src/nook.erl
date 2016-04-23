@@ -1,12 +1,12 @@
 %%% ----------------------------------------------------------------------------
 %%% @author Jim Rosenblum <jrosenblum@jims-mbp.jhs.local>
 %%% @copyright (C) 2016, Jim Rosenblum
-%%% @doc Library module that acts as a "client" interface to Nook.
-%%% Notes are binary messages stored in DynamoDB with some meta data defining
-%%% their life-cycle.
+%%% @doc Library module that acts as the client interface to Nook. Notes are
+%%% binary messages, currently stored in DynamoDB ,with some meta data defining
+%%% their life-span.
 %%%
-%%% Once a message is created, it is retrieved via unique key, don't have the
-%%% key then you cannot get the message.
+%%% Once a message is created, it is retrieved via unique key., Don't have the
+%%% key, don't get the message.
 %%% @end
 %%% Created :  1 Apr 2016 by Jim Rosenblum <jrosenblum@jims-mbp.jhs.local>
 %%% ----------------------------------------------------------------------------
@@ -31,9 +31,9 @@
 -export_type([key/0, contents/0, ttl/0, gets/0]).
 
 
-% Notes must not live forever: one of TTL or Retrievals must not be infinite
-% and also be a positive integers.
--define (VALID_P(N), (N == infinite) or (is_integer(N) andalso N >= 0)).
+% Notes must not live forever: one of TTL or Retrievals must be a 
+% a positive integers.
+-define (VALID_P(N), (N == infinite) or (is_integer(N) andalso N > 0)).
 -define (VALID(T,R), ?VALID_P(T) andalso 
                      ?VALID_P(R) andalso 
                      (T /= infinite orelse R /= infinite)).

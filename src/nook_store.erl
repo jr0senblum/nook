@@ -2,7 +2,7 @@
 %%% @author Jim Rosenblum <jrosenblum@jims-mbp.jhs.local>
 %%% @copyright (C) 2016, Jim Rosenblum
 %%% @doc Library module that interacts with DynamoDb to persist, update and
-%%% retrieve the note.
+%%% retrieve note.
 %%% @end
 %%% Created :  20 Apr 2016 by Jim Rosenblum <jrosenblum@jims-mbp.jhs.local>
 %%% ----------------------------------------------------------------------------
