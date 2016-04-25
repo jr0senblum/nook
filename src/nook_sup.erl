@@ -49,16 +49,16 @@ start_link() ->
 
 
 init([]) ->
-    SupFlags = #{strategy => simple_one_for_one,
-                 intensity => 0,
-                 period => 1},
+    SupFlags = #{strategy => one_for_one,
+                 intensity => 60,
+                 period => 300},
 
-    ChildSpec = #{id => nook_sup,
-                  start => {nook_note, start_link, []}, 
-                  restart => temporary, 
+    ChildSpec = #{id => nook_cleanup,
+                  start => {nook_cleanup, start_link, []}, 
+                  restart => permanent, 
                   shutdown => 1000, 
                   type => worker, 
-                  modules => [nook_note]},
+                  modules => [nook_cleanup]},
 
     {ok, { SupFlags, [ChildSpec]} }.
 

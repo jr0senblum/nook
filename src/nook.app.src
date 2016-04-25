@@ -9,7 +9,7 @@
     erldyn
    ]},
   {env, []},
-  {modules, [nook, nook_app, nook_store, nook_sup]},
+  {modules, [nook, nook_app, nook_cleanup, nook_store, nook_sup]},
   {maintainers, ["Jim Rosenblum"]},
   {licenses, []},
   {links, []}

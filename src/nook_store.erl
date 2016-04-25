@@ -11,6 +11,7 @@
 
 % Public API
 -export([delete/1,
+         delete_old/0,
          get/1,
          update/1,
          put/4]).
@@ -46,6 +47,7 @@ put(Key, Content, TTL, Gets) ->
                 <<"Contents">> => #{<<"B">> => encrypt(Key, Content)},
                 <<"Gets">> => #{<<"N">> => convert(Gets)},
                 <<"TimeTL">> => #{<<"N">> => convert(TTL)},
+                <<"Expiration">> => #{<<"N">> => convert(TTL + Now)},
                 <<"Created">> => #{<<"N">> => convert(Now)}
                }
          },
@@ -100,6 +102,54 @@ delete(Key) ->
                    #{<<"HKey">> => #{<<"S">> => HashedKey}}},
     erldyn:delete_item(jsone:encode(Select)),
     ok.
+
+
+%% -----------------------------------------------------------------------------
+%% Delete items from dynamoDb whose TTL has expired.
+%%
+-spec delete_old() -> ok.
+
+delete_old() ->
+    set_endpoint(),
+    Now = integer_to_binary(calendar:datetime_to_gregorian_seconds(calendar:universal_time())),
+
+
+    Select = #{<<"TableName">> => <<"Notes">>,
+               <<"FilterExpression">> => <<"Expiration < :now">>,
+               <<"ExpressionAttributeValues">> => #{<<":now">> => #{<<"N">> => Now}}
+              },
+ 
+    case erldyn:scan(jsone:encode(Select)) of
+        {ok, Candidates} -> delete_found(Candidates);
+        _ ->
+            ok
+    end.
+
+
+delete_found(Candidates) ->
+    case jwalk:get({"Items","HKey","S"}, Candidates) of
+        undefined -> 
+            ok;
+        Keys ->
+            [delete_(K) || K <- Keys],
+            ok
+    end,
+    case jwalk:get({"LastEvaluatedKey"}, Candidates) of
+        undefined ->
+            ok;
+        _  ->
+            delete_old()
+    end.
+
+
+delete_(Key) ->
+
+    Select = #{<<"TableName">>  => <<"Notes">>,
+             <<"Key">> => 
+                   #{<<"HKey">> => #{<<"S">> => Key}}},
+    erldyn:delete_item(jsone:encode(Select)),
+    ok.
+
 
 
 %% -----------------------------------------------------------------------------
