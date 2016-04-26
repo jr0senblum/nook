@@ -40,6 +40,12 @@ put(Key, Content, TTL, Gets) ->
     set_endpoint(),
     HashedKey = hash_key(Key),
     Now = calendar:datetime_to_gregorian_seconds(calendar:universal_time()),
+    Expired = case TTL of
+                  infinite ->
+                      infinite;
+                  N when is_integer(N) ->
+                      N + Now
+              end,
     Item = 
         #{<<"TableName">> => <<"Notes">>,
           <<"Item">> => 
@@ -47,7 +53,7 @@ put(Key, Content, TTL, Gets) ->
                 <<"Contents">> => #{<<"B">> => encrypt(Key, Content)},
                 <<"Gets">> => #{<<"N">> => convert(Gets)},
                 <<"TimeTL">> => #{<<"N">> => convert(TTL)},
-                <<"Expiration">> => #{<<"N">> => convert(TTL + Now)},
+                <<"Expiration">> => #{<<"N">> => convert(Expired)},
                 <<"Created">> => #{<<"N">> => convert(Now)}
                }
          },
@@ -115,8 +121,9 @@ delete_old() ->
 
 
     Select = #{<<"TableName">> => <<"Notes">>,
-               <<"FilterExpression">> => <<"Expiration < :now">>,
-               <<"ExpressionAttributeValues">> => #{<<":now">> => #{<<"N">> => Now}}
+               <<"FilterExpression">> => <<"(Expiration < :now) and (Expiration >= :zero)">>,
+               <<"ExpressionAttributeValues">> => #{<<":now">> => #{<<"N">> => Now},
+                                                    <<":zero">> => #{<<"N">> => <<"0">>}}
               },
  
     case erldyn:scan(jsone:encode(Select)) of
