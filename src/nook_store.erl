@@ -37,7 +37,7 @@
       Gets    :: nook:gets().
                              
 put(Key, Content, TTL, Gets) ->
-    set_endpoint(),
+    config(),
     HashedKey = hash_key(Key),
     Now = calendar:datetime_to_gregorian_seconds(calendar:universal_time()),
     Expired = case TTL of
@@ -71,7 +71,7 @@ put(Key, Content, TTL, Gets) ->
 -spec get(nook:key()) -> {ok, #{}} | store_errors().
 
 get(Key) ->
-    set_endpoint(),
+    config(),
     HashedKey = hash_key(Key),
 
     Select = #{<<"TableName">>  => <<"Notes">>,
@@ -100,7 +100,7 @@ get(Key) ->
 -spec delete(nook:key()) -> ok.
 
 delete(Key) ->
-    set_endpoint(),
+    config(),
     HashedKey = hash_key(Key),
 
     Select = #{<<"TableName">>  => <<"Notes">>,
@@ -116,7 +116,7 @@ delete(Key) ->
 -spec delete_old() -> ok.
 
 delete_old() ->
-    set_endpoint(),
+    config(),
     Now = integer_to_binary(calendar:datetime_to_gregorian_seconds(calendar:universal_time())),
 
 
@@ -166,7 +166,7 @@ delete_(Key) ->
 -spec update(nook:key()) -> {ok, #{}} | store_errors().
 
 update(Key) ->
-    set_endpoint(),
+    config(),
     HashedKey = hash_key(Key),
 
     Select = 
@@ -235,6 +235,22 @@ convert(N) when is_binary(N) ->
 convert(N) ->
     integer_to_binary(N).
 
-set_endpoint()->
+
+config() ->
     {ok, Ep} = application:get_env(nook, endpoint),
-    erldyn:config(#{endpoint => Ep}).
+
+    case httpc:request("http://169.254.169.254/latest/meta-data/iam/security-credentials/NookRole") of
+        {ok, {{_, 200,"OK"}, _, Result}} ->
+            RMap = jsone:decode(list_to_binary(Result)),
+            
+            erldyn:config(#{access_key => binary_to_list(maps:get(<<"AccessKeyId">>, RMap)),
+                            secret_key => binary_to_list(maps:get(<<"SecretAccessKey">>, RMap)),
+                            token => binary_to_list(maps:get(<<"Token">>, RMap)),
+                            endpoint => Ep});
+        _ ->
+            erldyn:config(#{endpoint => Ep})
+    end.
+                                       
+
+                            
+            
