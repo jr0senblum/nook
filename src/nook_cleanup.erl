@@ -35,6 +35,8 @@ init([]) ->
     Cleanup_sec = application:get_env(nook, cleanup_sec, ?CLEANUP_SEC),
     Cleanup_ms = Cleanup_sec * 1000,
     erlang:send_after(Cleanup_ms, ?MODULE, delete_old),
+    lager:info("~p: starting cleanup process with a ~p interval.", 
+               [?MODULE, Cleanup_sec]),
     {ok, #state{cleanup_ms=Cleanup_ms}}.
 
 
@@ -48,6 +50,7 @@ handle_cast(_Msg, State) ->
 
 
 handle_info(delete_old, #state{cleanup_ms=Int} = State) ->
+    lager:notice("~p: deleting expired messages.",[?MODULE]),
     nook_store:delete_old(),
     erlang:send_after(Int, ?MODULE, delete_old),
     {noreply, State};

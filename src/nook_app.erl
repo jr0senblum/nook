@@ -24,6 +24,7 @@
 -spec start(atom(), application:restart_tupe()) -> ok | {error, term()}.
 
 start(_StartType, _StartArgs) ->
+    lager:start(),
     erldyn:config(),
     nook_sup:start_link().
 

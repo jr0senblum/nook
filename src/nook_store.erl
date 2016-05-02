@@ -261,11 +261,12 @@ get_credentials() ->
         {ok, {{_, 200,"OK"}, _, Result}} ->
             RMap = jsone:decode(list_to_binary(Result)),
             put(expiration, binary_to_list(maps:get(<<"Expiration">>, RMap))),
-                
-                erldyn:config(#{access_key => binary_to_list(maps:get(<<"AccessKeyId">>, RMap)),
+            erldyn:config(#{access_key => binary_to_list(maps:get(<<"AccessKeyId">>, RMap)),
                             secret_key => binary_to_list(maps:get(<<"SecretAccessKey">>, RMap)),
                             token => binary_to_list(maps:get(<<"Token">>, RMap)),
-                            endpoint => Ep});
+                            endpoint => Ep}),
+            lager:notice("~p: fetched new credentials that expire ~p.",
+                         [?MODULE, get(expiration)]);
         _ ->
             erldyn:config(#{endpoint => Ep})
     end.

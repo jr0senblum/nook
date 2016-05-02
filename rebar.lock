@@ -1,5 +1,9 @@
-[{<<"erldyn">>,{pkg,<<"erldyn">>,<<"0.5.2">>},0},
+[{<<"cf">>,{pkg,<<"cf">>,<<"0.2.1">>},1},
+ {<<"erldyn">>,{pkg,<<"erldyn">>,<<"0.5.2">>},0},
+ {<<"erlware_commons">>,{pkg,<<"erlware_commons">>,<<"0.20.0">>},0},
+ {<<"goldrush">>,{pkg,<<"goldrush">>,<<"0.1.7">>},1},
  {<<"jsone">>,{pkg,<<"jsone">>,<<"1.2.2">>},1},
  {<<"jwalk">>,{pkg,<<"jwalk">>,<<"1.1.2">>},0},
+ {<<"lager">>,{pkg,<<"lager">>,<<"3.0.2">>},0},
  {<<"quickrand">>,{pkg,<<"quickrand">>,<<"1.5.1">>},1},
  {<<"uuid">>,{pkg,<<"uuid_erl">>,<<"1.5.1">>},0}].
