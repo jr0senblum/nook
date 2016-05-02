@@ -238,7 +238,7 @@ convert(N) ->
 
 
 config() ->
-    Now = calendar:univeral_time(),
+    Now = calendar:universal_time(),
     Expiration = ec_date:parse(get(expiration)),
     case Expiration of
         undefined ->
