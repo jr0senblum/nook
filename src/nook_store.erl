@@ -12,7 +12,7 @@
 % Public API
 -export([delete/1,
          delete_old/0,
-         get/1,
+         n_get/1,
          update/1,
          put/4]).
 
@@ -68,9 +68,9 @@ put(Key, Content, TTL, Gets) ->
 %% -----------------------------------------------------------------------------
 %% Get the item from dynamoDb, convert result into expected map.
 %%
--spec get(nook:key()) -> {ok, #{}} | store_errors().
+-spec n_get(nook:key()) -> {ok, #{}} | store_errors().
 
-get(Key) ->
+n_get(Key) ->
     config(),
     HashedKey = hash_key(Key),
 
@@ -117,7 +117,8 @@ delete(Key) ->
 
 delete_old() ->
     config(),
-    Now = integer_to_binary(calendar:datetime_to_gregorian_seconds(calendar:universal_time())),
+    Now = 
+        integer_to_binary(calendar:datetime_to_gregorian_seconds(calendar:universal_time())),
 
 
     Select = #{<<"TableName">> => <<"Notes">>,
@@ -237,13 +238,27 @@ convert(N) ->
 
 
 config() ->
-    {ok, Ep} = application:get_env(nook, endpoint),
+    Now = calendar:univeral_time(),
+    Expiration = ec_date:parse(get(expiration)),
+    case Expiration of
+        undefined ->
+            get_credentials();
+        Exp when Exp > Now ->
+            ok;
+        _ ->
+            get_credentials()
+    end.
 
-    case httpc:request("http://169.254.169.254/latest/meta-data/iam/security-credentials/NookRole") of
+get_credentials() ->
+    {ok, Ep} = application:get_env(nook, endpoint),
+    {ok, IamEp} = application:get_env(nook, metadata),
+    
+    case httpc:request(IamEp ++ "NookRole") of
         {ok, {{_, 200,"OK"}, _, Result}} ->
             RMap = jsone:decode(list_to_binary(Result)),
-            
-            erldyn:config(#{access_key => binary_to_list(maps:get(<<"AccessKeyId">>, RMap)),
+            put(expiration, binary_to_list(maps:get(<<"Expiration">>, RMap))),
+                
+                erldyn:config(#{access_key => binary_to_list(maps:get(<<"AccessKeyId">>, RMap)),
                             secret_key => binary_to_list(maps:get(<<"SecretAccessKey">>, RMap)),
                             token => binary_to_list(maps:get(<<"Token">>, RMap)),
                             endpoint => Ep});

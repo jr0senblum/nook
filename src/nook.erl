@@ -65,7 +65,7 @@ destroy(_Key) ->
 
 expiration(Key) when is_list(Key) ->
 
-    case nook_store:get(Key) of
+    case nook_store:n_get(Key) of
         {ok, #{ttl := infinite}} ->
             {ok, undefined};
         {ok, #{ttl := TTL, created := Created}} ->
@@ -84,7 +84,7 @@ expiration(_) ->
 -spec exists(key()) -> {ok, true | fase} | errors().
 
 exists(Key) when is_list(Key) ->
-    case nook_store:get(Key) of 
+    case nook_store:n_get(Key) of 
         {ok, _} ->
             true;
         {error, missing_note} -> 
@@ -103,7 +103,7 @@ exists(_) ->
 -spec get(key()) -> {ok, map()} | errors().
 
 get(Key) when is_list(Key) ->
-    nook_store:get(Key);
+    nook_store:n_get(Key);
 
 get(_Key) ->
     {error, badarg}.
@@ -138,7 +138,7 @@ decriment(_Key) ->
 -spec gets(key()) -> {ok, infinite | pos_integer()} | errors().
 
 gets(Key) when is_list(Key) ->
-    case nook_store:get(Key) of
+    case nook_store:n_get(Key) of
         {ok, #{gets := infinite}} ->
             {ok, infinite};
         {ok, #{gets := Gets}} ->
