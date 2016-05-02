@@ -239,14 +239,18 @@ convert(N) ->
 
 config() ->
     Now = calendar:universal_time(),
-    Expiration = ec_date:parse(get(expiration)),
+    
+    Expiration = get(expiration),
     case Expiration of
         undefined ->
             get_credentials();
-        Exp when Exp > Now ->
-            ok;
-        _ ->
-            get_credentials()
+        Exp -> 
+            case (ec_date:parse(Exp) > Now) of
+                true ->
+                    ok;
+                false->
+                    get_credentials()
+            end
     end.
 
 get_credentials() ->
