@@ -10,6 +10,10 @@
           secret_key,
           token}).
 
+fix({{_,_,_},{_,_,_}}=Good) ->
+    Good;
+fix({A,{B,C,D,_}}) ->
+    {A, {B,C,D}}.
 
 
 -spec get_credentials() -> #creds{}.
@@ -17,7 +21,8 @@ get_credentials() ->
     try ets:lookup(nook_cred, creds) of
         [#creds{expiration = Exp} = Credentials] ->
             Now = calendar:universal_time(),
-            case (ec_date:parse(Exp) > Now) of
+            E = fix(ec_date:parse(Exp)),
+            case (E > Now) of
                 true ->
                     Credentials;
                 false ->
