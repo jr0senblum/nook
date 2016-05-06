@@ -243,7 +243,7 @@ convert(N) ->
 
 refresh_credentials() ->
     {ok, Ep} = application:get_env(nook, endpoint),
-    C = decode(nook_sup:get_credentials()),
+    C = decode(nook_creds:get_credentials()),
     erldyn:config(#{access_key => C#creds.access_key,
                     secret_key => C#creds.secret_key,
                     token => C#creds.token,
