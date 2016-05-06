@@ -158,8 +158,8 @@ get_key() ->
     case application:get_env(nook, left) of
         undefined ->
             Key = uuid:get_v4(),
-            application:put_env(nook, left, Key),
+            application:set_env(nook, left, Key),
             Key;
-        Value ->
+        {ok, Value} ->
             Value
 end.
