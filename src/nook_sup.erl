@@ -73,10 +73,11 @@ init([]) ->
 
 -spec get_credentials() -> #creds{}.
 get_credentials() ->
-    try ets:lookup(nook_cred, cred) of
-        [#creds{expiration = Exp} = Credentials] ->
+    try ets:lookup(nook_cred, creds) of
+        [#creds{} = C] ->
+            Credentials = decode(C),
             Now = calendar:universal_time(),
-            case (ec_date:parse(Exp) > Now) of
+            case (ec_date:parse(Credentials#creds.expiration) > Now) of
                 true ->
                     Credentials;
                 false ->
@@ -101,7 +102,7 @@ refresh_credentials() ->
                                  token = binary_to_list(maps:get(<<"Token">>, RMap))},
             lager:notice("~p: fetched new credentials that expire ~p.",
                          [?MODULE, Credentials#creds.expiration]),
-            insert_credentials(Credentials),
+            insert_credentials(encode(Credentials)),
             Credentials;
         _ ->
             error
@@ -126,3 +127,29 @@ create_cred_table() ->
                         {read_concurrency, true}, 
                         {write_concurrency, false}]),
     ets:give_away(Tid, whereis(?MODULE), []).
+
+
+decode(#creds{expiration = E, access_key = AK, secret_key = SK, token = T}) ->
+    #creds{expiration = decrypt(E),
+           access_key = decrypt(AK),
+           secret_key = decrypt(SK),
+           token = decrypt(T)}.
+
+encode(#creds{expiration = E, access_key = AK, secret_key = SK, token = T}) ->
+    #creds{expiration = encrypt(E),
+           access_key = encrypt(AK),
+           secret_key = encrypt(SK),
+           token = encrypt(T)}.
+
+encrypt(PlainText) ->
+    X = <<143,140,40,57,74,8,68,126,167,27,79,202,188,230,119,80>>,
+    State = crypto:stream_init(aes_ctr, X, X),
+    {_, CipherText} = crypto:stream_encrypt(State, PlainText),
+    CipherText.
+
+
+decrypt(CipherText) ->
+    X = <<143,140,40,57,74,8,68,126,167,27,79,202,188,230,119,80>>,
+    State = crypto:stream_init(aes_ctr, X, X),
+    {_, PlainText} = crypto:stream_decrypt(State, CipherText),
+    PlainText.
