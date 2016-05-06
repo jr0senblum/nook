@@ -100,7 +100,7 @@ refresh_credentials() ->
                                  secret_key = binary_to_list(maps:get(<<"SecretAccessKey">>, RMap)),
                                  token = binary_to_list(maps:get(<<"Token">>, RMap))},
             lager:notice("~p: fetched new credentials that expire ~p.",
-                         [?MODULE, get(Credentials#creds.expiration)]),
+                         [?MODULE, Credentials#creds.expiration]),
             insert_credentials(Credentials),
             Credentials;
         _ ->

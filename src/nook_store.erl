@@ -244,7 +244,7 @@ convert(N) ->
 refresh_credentials() ->
     {ok, Ep} = application:get_env(nook, endpoint),
     C = nook_sup:get_credentials(),
-    erldyn:refresh_credentials(#{access_key => C#creds.access_key,
+    erldyn:config(#{access_key => C#creds.access_key,
                     secret_key => C#creds.secret_key,
                     token => C#creds.token,
                     endpoint => Ep}).
