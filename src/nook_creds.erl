@@ -67,7 +67,7 @@ create_cred_table() ->
                         public, 
                         {read_concurrency, true}, 
                         {write_concurrency, false}]),
-    ets:give_away(Tid, whereis(?MODULE), []).
+    ets:give_away(Tid, whereis(nook_sup), []).
 
 
 
