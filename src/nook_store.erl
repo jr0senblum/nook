@@ -243,13 +243,23 @@ convert(N) ->
 
 refresh_credentials() ->
     {ok, Ep} = application:get_env(nook, endpoint),
-    C = nook_sup:get_credentials(),
+    C = decode(nook_sup:get_credentials()),
     erldyn:config(#{access_key => C#creds.access_key,
                     secret_key => C#creds.secret_key,
                     token => C#creds.token,
                     endpoint => Ep}).
 
-                                       
+decode(#creds{expiration = E, access_key = AK, secret_key = SK, token = T}) ->
+    #creds{expiration = E,
+           access_key = binary_to_list(decrypt(AK)),
+           secret_key = binary_to_list(decrypt(SK)),
+           token = binary_to_list(decrypt(T))}.
+
+decrypt(CipherText) ->
+    {ok, X} = application:get_env(nook, left),
+    State = crypto:stream_init(aes_ctr, X, X),
+    {_, PlainText} = crypto:stream_decrypt(State, CipherText),
+    PlainText.                                       
 
                             
             
