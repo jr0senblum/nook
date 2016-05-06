@@ -243,11 +243,17 @@ convert(N) ->
 
 refresh_credentials() ->
     {ok, Ep} = application:get_env(nook, endpoint),
-    C = decode(nook_creds:get_credentials()),
-    erldyn:config(#{access_key => C#creds.access_key,
-                    secret_key => C#creds.secret_key,
-                    token => C#creds.token,
-                    endpoint => Ep}).
+    case nook_creds:get_credentials() of
+        error ->
+            % no aim credentials to use
+            erldyn:confg(#{endpoint => Ep});
+        Credentials ->
+            Decoded = decode(Credentials),
+            erldyn:config(#{access_key => Decoded#creds.access_key,
+                            secret_key => Decoded#creds.secret_key,
+                            token => Decoded#creds.token,
+                            endpoint => Ep})
+    end.
 
 decode(#creds{expiration = E, access_key = AK, secret_key = SK, token = T}) ->
     #creds{expiration = E,
