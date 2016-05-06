@@ -130,10 +130,10 @@ create_cred_table() ->
 
 
 decode(#creds{expiration = E, access_key = AK, secret_key = SK, token = T}) ->
-    #creds{expiration = decrypt(E),
-           access_key = decrypt(AK),
-           secret_key = decrypt(SK),
-           token = decrypt(T)}.
+    #creds{expiration = binary_to_list(decrypt(E)),
+           access_key = binary_to_list(decrypt(AK)),
+           secret_key = binary_to_list(decrypt(SK)),
+           token = binary_to_list(decrypt(T))}.
 
 encode(#creds{expiration = E, access_key = AK, secret_key = SK, token = T}) ->
     #creds{expiration = encrypt(E),
