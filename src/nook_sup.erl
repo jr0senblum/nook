@@ -12,8 +12,7 @@
 
 % API
 -export([start_link/0,
-         start_nook/1,
-         get_credentials/0]).
+         start_nook/1]).
 
 
 
