@@ -56,7 +56,6 @@ start_link() ->
 
 
 init([]) ->
-    put(left, uuid:get_vr()),
     SupFlags = #{strategy => one_for_one,
                  intensity => 60,
                  period => 300},
@@ -91,7 +90,7 @@ get_credentials() ->
             refresh_credentials()
     end.
 
-
+            
 refresh_credentials() ->
     {ok, IamEp} = application:get_env(nook, metadata),
     case httpc:request(IamEp ++ "NookRole") of
@@ -143,14 +142,24 @@ encode(#creds{expiration = E, access_key = AK, secret_key = SK, token = T}) ->
            token = encrypt(T)}.
 
 encrypt(PlainText) ->
-    X = get(left),
+    X = get_key(),
     State = crypto:stream_init(aes_ctr, X, X),
     {_, CipherText} = crypto:stream_encrypt(State, PlainText),
     CipherText.
 
 
 decrypt(CipherText) ->
-    X = get(left),
+    X = get_key(),
     State = crypto:stream_init(aes_ctr, X, X),
     {_, PlainText} = crypto:stream_decrypt(State, CipherText),
     PlainText.
+
+get_key() ->
+    case application:get_env(nook, left) of
+        undefined ->
+            Key = uuid:get_v4(),
+            application:put_env(nook, left, Key),
+            Key;
+        Value ->
+            Value
+end.
