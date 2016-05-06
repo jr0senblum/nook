@@ -20,7 +20,11 @@
 -type store_errors() :: {error, missing_note} | {error, {storage, term()}}.
 -export_type([store_errors/0]).
 
-
+-record (creds, 
+         {expiration, 
+          access_key,
+          secret_key,
+          token}).
 
 %%% ============================================================================
 %%%                               API
@@ -37,7 +41,7 @@
       Gets    :: nook:gets().
                              
 put(Key, Content, TTL, Gets) ->
-    config(),
+    refresh_credentials(),
     HashedKey = hash_key(Key),
     Now = calendar:datetime_to_gregorian_seconds(calendar:universal_time()),
     Expired = case TTL of
@@ -71,7 +75,7 @@ put(Key, Content, TTL, Gets) ->
 -spec n_get(nook:key()) -> {ok, #{}} | store_errors().
 
 n_get(Key) ->
-    config(),
+    refresh_credentials(),
     HashedKey = hash_key(Key),
 
     Select = #{<<"TableName">>  => <<"Notes">>,
@@ -100,7 +104,7 @@ n_get(Key) ->
 -spec delete(nook:key()) -> ok.
 
 delete(Key) ->
-    config(),
+    refresh_credentials(),
     HashedKey = hash_key(Key),
 
     Select = #{<<"TableName">>  => <<"Notes">>,
@@ -116,7 +120,7 @@ delete(Key) ->
 -spec delete_old() -> ok.
 
 delete_old() ->
-    config(),
+    refresh_credentials(),
     Now = 
         integer_to_binary(calendar:datetime_to_gregorian_seconds(calendar:universal_time())),
 
@@ -167,7 +171,7 @@ delete_(Key) ->
 -spec update(nook:key()) -> {ok, #{}} | store_errors().
 
 update(Key) ->
-    config(),
+    refresh_credentials(),
     HashedKey = hash_key(Key),
 
     Select = 
@@ -237,39 +241,14 @@ convert(N) ->
     integer_to_binary(N).
 
 
-config() ->
-    Now = calendar:universal_time(),
-    
-    Expiration = get(expiration),
-    case Expiration of
-        undefined ->
-            get_credentials();
-        Exp -> 
-            case (ec_date:parse(Exp) > Now) of
-                true ->
-                    ok;
-                false->
-                    get_credentials()
-            end
-    end.
-
-get_credentials() ->
+refresh_credentials() ->
     {ok, Ep} = application:get_env(nook, endpoint),
-    {ok, IamEp} = application:get_env(nook, metadata),
-    
-    case httpc:request(IamEp ++ "NookRole") of
-        {ok, {{_, 200,"OK"}, _, Result}} ->
-            RMap = jsone:decode(list_to_binary(Result)),
-            put(expiration, binary_to_list(maps:get(<<"Expiration">>, RMap))),
-            erldyn:config(#{access_key => binary_to_list(maps:get(<<"AccessKeyId">>, RMap)),
-                            secret_key => binary_to_list(maps:get(<<"SecretAccessKey">>, RMap)),
-                            token => binary_to_list(maps:get(<<"Token">>, RMap)),
-                            endpoint => Ep}),
-            lager:notice("~p: fetched new credentials that expire ~p.",
-                         [?MODULE, get(expiration)]);
-        _ ->
-            erldyn:config(#{endpoint => Ep})
-    end.
+    C = nook_sup:get_credentials(),
+    erldyn:refresh_credentials(#{access_key => C#creds.access_key,
+                    secret_key => C#creds.secret_key,
+                    token => C#creds.token,
+                    endpoint => Ep}).
+
                                        
 
                             
