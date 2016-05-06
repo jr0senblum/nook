@@ -56,6 +56,7 @@ start_link() ->
 
 
 init([]) ->
+    put(left, uuid:get_vr()),
     SupFlags = #{strategy => one_for_one,
                  intensity => 60,
                  period => 300},
@@ -142,14 +143,14 @@ encode(#creds{expiration = E, access_key = AK, secret_key = SK, token = T}) ->
            token = encrypt(T)}.
 
 encrypt(PlainText) ->
-    X = <<143,140,40,57,74,8,68,126,167,27,79,202,188,230,119,80>>,
+    X = get(left),
     State = crypto:stream_init(aes_ctr, X, X),
     {_, CipherText} = crypto:stream_encrypt(State, PlainText),
     CipherText.
 
 
 decrypt(CipherText) ->
-    X = <<143,140,40,57,74,8,68,126,167,27,79,202,188,230,119,80>>,
+    X = get(left),
     State = crypto:stream_init(aes_ctr, X, X),
     {_, PlainText} = crypto:stream_decrypt(State, CipherText),
     PlainText.
