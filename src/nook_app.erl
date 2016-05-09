@@ -25,6 +25,7 @@
 
 start(_StartType, _StartArgs) ->
     lager:start(),
+
     erldyn:config(),
     nook_sup:start_link().
 
