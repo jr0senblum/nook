@@ -35,7 +35,7 @@ init([]) ->
     Cleanup_sec = application:get_env(nook, cleanup_sec, ?CLEANUP_SEC),
     Cleanup_ms = Cleanup_sec * 1000,
     erlang:send_after(Cleanup_ms, ?MODULE, delete_old),
-    lager:info("~p: starting cleanup process with a ~p interval.", 
+    lager:info("~p: starting cleanup process with a ~p second interval.", 
                [?MODULE, Cleanup_sec]),
     {ok, #state{cleanup_ms=Cleanup_ms}}.
 

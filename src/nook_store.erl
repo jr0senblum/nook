@@ -20,11 +20,6 @@
 -type store_errors() :: {error, missing_note} | {error, {storage, term()}}.
 -export_type([store_errors/0]).
 
--record (creds, 
-         {expiration, 
-          access_key,
-          secret_key,
-          token}).
 
 %%% ============================================================================
 %%%                               API
@@ -128,7 +123,8 @@ delete_old() ->
               },
  
     case erldyn:scan(jsone:encode(Select)) of
-        {ok, Candidates} -> delete_found(Candidates);
+        {ok, Candidates} -> 
+            delete_found(Candidates);
         _ ->
             ok
     end.
