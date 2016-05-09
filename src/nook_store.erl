@@ -12,7 +12,7 @@
 % Public API
 -export([delete/1,
          delete_old/0,
-         n_get/1,
+         get/1,
          update/1,
          put/4]).
 
@@ -41,7 +41,6 @@
       Gets    :: nook:gets().
                              
 put(Key, Content, TTL, Gets) ->
-    refresh_credentials(),
     HashedKey = hash_key(Key),
     Now = calendar:datetime_to_gregorian_seconds(calendar:universal_time()),
     Expired = case TTL of
@@ -65,17 +64,16 @@ put(Key, Content, TTL, Gets) ->
         {ok, _} = Result ->
             Result;
         {error, #{<<"message">> := Message}} ->
-            {error, {storage_error, Message}}
+            {error, {storage, Message}}
     end.
 
 
 %% -----------------------------------------------------------------------------
 %% Get the item from dynamoDb, convert result into expected map.
 %%
--spec n_get(nook:key()) -> {ok, #{}} | store_errors().
+-spec get(nook:key()) -> {ok, #{}} | store_errors().
 
-n_get(Key) ->
-    refresh_credentials(),
+get(Key) ->
     HashedKey = hash_key(Key),
 
     Select = #{<<"TableName">>  => <<"Notes">>,
@@ -94,7 +92,7 @@ n_get(Key) ->
         {ok, #{}} ->
             {error, missing_note};
         {error, #{<<"message">> := Message}} ->
-            {error, {storage_error, Message}}
+            {error, {storage, Message}}
         end.
 
 
@@ -104,7 +102,6 @@ n_get(Key) ->
 -spec delete(nook:key()) -> ok.
 
 delete(Key) ->
-    refresh_credentials(),
     HashedKey = hash_key(Key),
 
     Select = #{<<"TableName">>  => <<"Notes">>,
@@ -120,7 +117,6 @@ delete(Key) ->
 -spec delete_old() -> ok.
 
 delete_old() ->
-    refresh_credentials(),
     Now = 
         integer_to_binary(calendar:datetime_to_gregorian_seconds(calendar:universal_time())),
 
@@ -171,7 +167,6 @@ delete_(Key) ->
 -spec update(nook:key()) -> {ok, #{}} | store_errors().
 
 update(Key) ->
-    refresh_credentials(),
     HashedKey = hash_key(Key),
 
     Select = 
@@ -182,7 +177,6 @@ update(Key) ->
           <<"ConditionExpression">> => <<"Gets > :zero">>,
           <<"ExpressionAttributeValues">> => #{<<":num">> => #{<<"N">> => <<"1">>},
                                                <<":zero">> => #{<<"N">> => <<"0">>}
-
                                               },
           <<"ReturnValues">> => <<"UPDATED_NEW">>
          },
@@ -192,7 +186,7 @@ update(Key) ->
         {error, #{<<"message">> := <<"The conditional request failed">> = M}} ->
             {ok, #{<<"message">> => M}};
         {error, #{<<"message">> := _}} = Error ->
-            {error, Error}
+            {error, {storage, Error}}
     end.
 
 
@@ -240,32 +234,6 @@ convert(N) when is_binary(N) ->
 convert(N) ->
     integer_to_binary(N).
 
-
-refresh_credentials() ->
-    {ok, Ep} = application:get_env(nook, endpoint),
-    case nook_creds:get_credentials() of
-        error ->
-            % no aim credentials to use
-            erldyn:confg(#{endpoint => Ep});
-        Credentials ->
-            Decoded = decode(Credentials),
-            erldyn:config(#{access_key => Decoded#creds.access_key,
-                            secret_key => Decoded#creds.secret_key,
-                            token => Decoded#creds.token,
-                            endpoint => Ep})
-    end.
-
-decode(#creds{expiration = E, access_key = AK, secret_key = SK, token = T}) ->
-    #creds{expiration = E,
-           access_key = binary_to_list(decrypt(AK)),
-           secret_key = binary_to_list(decrypt(SK)),
-           token = binary_to_list(decrypt(T))}.
-
-decrypt(CipherText) ->
-    {ok, X} = application:get_env(nook, left),
-    State = crypto:stream_init(aes_ctr, X, X),
-    {_, PlainText} = crypto:stream_decrypt(State, CipherText),
-    PlainText.                                       
 
                             
             

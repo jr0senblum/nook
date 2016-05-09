@@ -1,7 +1,9 @@
+
+
 {application, nook,
  [{description, "Nooks to store stuff in."},
   {vsn, "0.1.0"},
-  {registered, [nook_sup, nook_app]},
+  {registered, [nook_app, nook_cleanup, nook_sup]},
   {mod, {nook_app, []}},
   {applications,
    [kernel,
