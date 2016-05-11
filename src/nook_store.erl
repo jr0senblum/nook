@@ -37,13 +37,8 @@
                              
 put(Key, Content, TTL, Gets) ->
     HashedKey = hash_key(Key),
-    Now = calendar:datetime_to_gregorian_seconds(calendar:universal_time()),
-    Expired = case TTL of
-                  infinite ->
-                      infinite;
-                  N when is_integer(N) ->
-                      N + Now
-              end,
+    Now = now_in_seconds(),
+    Expires = calc_expiration(TTL, Now),
     Item = 
         #{<<"TableName">> => <<"Notes">>,
           <<"Item">> => 
@@ -51,7 +46,7 @@ put(Key, Content, TTL, Gets) ->
                 <<"Contents">> => #{<<"B">> => encrypt(Key, Content)},
                 <<"Gets">> => #{<<"N">> => convert(Gets)},
                 <<"TimeTL">> => #{<<"N">> => convert(TTL)},
-                <<"Expiration">> => #{<<"N">> => convert(Expired)},
+                <<"Expiration">> => #{<<"N">> => convert(Expires)},
                 <<"Created">> => #{<<"N">> => convert(Now)}
                }
          },
@@ -112,13 +107,11 @@ delete(Key) ->
 -spec delete_old() -> ok.
 
 delete_old() ->
-    Now = 
-        integer_to_binary(calendar:datetime_to_gregorian_seconds(calendar:universal_time())),
-
+    Now = now_in_seconds(),
 
     Select = #{<<"TableName">> => <<"Notes">>,
                <<"FilterExpression">> => <<"(Expiration < :now) and (Expiration >= :zero)">>,
-               <<"ExpressionAttributeValues">> => #{<<":now">> => #{<<"N">> => Now},
+               <<"ExpressionAttributeValues">> => #{<<":now">> => #{<<"N">> => convert(Now)},
                                                     <<":zero">> => #{<<"N">> => <<"0">>}}
               },
  
@@ -131,7 +124,7 @@ delete_old() ->
 
 
 delete_found(Candidates) ->
-    case jwalk:get({"Items","HKey","S"}, Candidates) of
+    case jwalk:get({"Items", "HKey", "S"}, Candidates) of
         undefined -> 
             ok;
         Keys ->
@@ -149,7 +142,7 @@ delete_found(Candidates) ->
 delete_(Key) ->
 
     Select = #{<<"TableName">>  => <<"Notes">>,
-             <<"Key">> => 
+               <<"Key">> => 
                    #{<<"HKey">> => #{<<"S">> => Key}}},
     erldyn:delete_item(jsone:encode(Select)),
     ok.
@@ -168,7 +161,7 @@ update(Key) ->
     Select = 
         #{<<"TableName">> => <<"Notes">>,
           <<"Key">> => 
-                   #{<<"HKey">> => #{<<"S">> => HashedKey}},
+              #{<<"HKey">> => #{<<"S">> => HashedKey}},
           <<"UpdateExpression">> => <<"set Gets = Gets - :num">>,
           <<"ConditionExpression">> => <<"Gets > :zero">>,
           <<"ExpressionAttributeValues">> => #{<<":num">> => #{<<"N">> => <<"1">>},
@@ -233,3 +226,14 @@ convert(N) ->
 
                             
             
+now_in_seconds() ->
+    calendar:datetime_to_gregorian_seconds(calendar:universal_time()).
+
+
+calc_expiration(TTL, Now) ->
+    case TTL of
+        infinite ->
+            infinite;
+        N when is_integer(N) ->
+            N + Now
+    end.

@@ -1,11 +1,11 @@
 %%% ----------------------------------------------------------------------------
 %%% @author Jim Rosenblum <jrosenblum@jims-mbp.jhs.local>
 %%% @copyright (C) 2016, Jim Rosenblum
-%%% @doc Library module that acts as the client interface to Nook. Notes are
-%%% binary messages, currently stored in DynamoDB ,with some meta data defining
-%%% their life-span.
+%%% @doc Library module that acts as the client interface to Nook application. 
+%%% Notes are binary messages, currently stored in DynamoDB, with some meta 
+%%% data defining their life-span.
 %%%
-%%% Once a message is created, it is retrieved via unique key., Don't have the
+%%% Once a message is created, it is retrieved via unique key. Don't have the
 %%% key, don't get the message.
 %%% @end
 %%% Created :  1 Apr 2016 by Jim Rosenblum <jrosenblum@jims-mbp.jhs.local>
@@ -54,7 +54,7 @@
 
 decriment(Key) when is_list(Key) ->
     case nook_store:update(Key) of
-        {ok, #{gets := 0}} ->
+        {ok, #{gets := N}} when N =< 0->
             destroy(Key),
             {ok, destroyed};
         {ok, #{gets := N}} ->

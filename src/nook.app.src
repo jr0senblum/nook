@@ -1,4 +1,4 @@
-
+% -*- mode: erlang -*-
 
 {application, nook,
  [{description, "Nooks to store stuff in."},
